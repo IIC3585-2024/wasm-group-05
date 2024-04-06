@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/uc.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <script type="module" src="/main.js"></script>
+    <script src="/module/find_prime_numbers.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div>
+        <h1>Enter a number:</h1>
+        <div class="card">
+          <select id="method">
+            <option value="wasm">Use WASM</option>
+            <option value="js">Use JS</option>
+          </select>
+          <input id="number" type="number" />
+          <button id="trigger" type="button">
+            Find Prime Numbers
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
