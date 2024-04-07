@@ -370,13 +370,6 @@ function assert(condition, text) {
 
 // We used to include malloc/free by default in the past. Show a helpful error in
 // builds with assertions.
-function _malloc() {
-  abort('malloc() called but not included in the build - add `_malloc` to EXPORTED_FUNCTIONS');
-}
-function _free() {
-  // Show a helpful error since we used to include free by default in the past.
-  abort('free() called but not included in the build - add `_free` to EXPORTED_FUNCTIONS');
-}
 
 // Memory management
 
@@ -395,6 +388,12 @@ var HEAP,
   HEAPU32,
 /** @type {!Float32Array} */
   HEAPF32,
+/* BigInt64Array type is not correctly defined in closure
+/** not-@type {!BigInt64Array} */
+  HEAP64,
+/* BigUInt64Array type is not correctly defined in closure
+/** not-t@type {!BigUint64Array} */
+  HEAPU64,
 /** @type {!Float64Array} */
   HEAPF64;
 
@@ -409,6 +408,8 @@ function updateMemoryViews() {
   Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
   Module['HEAPF32'] = HEAPF32 = new Float32Array(b);
   Module['HEAPF64'] = HEAPF64 = new Float64Array(b);
+  Module['HEAP64'] = HEAP64 = new BigInt64Array(b);
+  Module['HEAPU64'] = HEAPU64 = new BigUint64Array(b);
 }
 // end include: runtime_shared.js
 assert(!Module['STACK_SIZE'], 'STACK_SIZE can no longer be set at runtime.  Use -sSTACK_SIZE at link time')
@@ -858,10 +859,6 @@ function createWasm() {
   return {}; // no exports yet; we'll fill them in later
 }
 
-// Globals used by JS i64 conversions (see makeSetValue)
-var tempDouble;
-var tempI64;
-
 // include: runtime_debug.js
 function legacyModuleProp(prop, newName, incoming=true) {
   if (!Object.getOwnPropertyDescriptor(Module, prop)) {
@@ -991,7 +988,7 @@ function dbg(...args) {
       case 'i8': return HEAP8[ptr];
       case 'i16': return HEAP16[((ptr)>>1)];
       case 'i32': return HEAP32[((ptr)>>2)];
-      case 'i64': abort('to do getValue(i64) use WASM_BIGINT');
+      case 'i64': return HEAP64[((ptr)>>3)];
       case 'float': return HEAPF32[((ptr)>>2)];
       case 'double': return HEAPF64[((ptr)>>3)];
       case '*': return HEAPU32[((ptr)>>2)];
@@ -1021,7 +1018,7 @@ function dbg(...args) {
       case 'i8': HEAP8[ptr] = value; break;
       case 'i16': HEAP16[((ptr)>>1)] = value; break;
       case 'i32': HEAP32[((ptr)>>2)] = value; break;
-      case 'i64': abort('to do setValue(i64) use WASM_BIGINT');
+      case 'i64': HEAP64[((ptr)>>3)] = BigInt(value); break;
       case 'float': HEAPF32[((ptr)>>2)] = value; break;
       case 'double': HEAPF64[((ptr)>>3)] = value; break;
       case '*': HEAPU32[((ptr)>>2)] = value; break;
@@ -1038,7 +1035,18 @@ function dbg(...args) {
       }
     };
 
-  var _emscripten_memcpy_js = (dest, src, num) => HEAPU8.copyWithin(dest, src, src + num);
+  var getHeapMax = () =>
+      HEAPU8.length;
+  
+  var abortOnCannotGrowMemory = (requestedSize) => {
+      abort(`Cannot enlarge memory arrays to size ${requestedSize} bytes (OOM). Either (1) compile with -sINITIAL_MEMORY=X with X higher than the current value ${HEAP8.length}, (2) compile with -sALLOW_MEMORY_GROWTH which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with -sABORTING_MALLOC=0`);
+    };
+  var _emscripten_resize_heap = (requestedSize) => {
+      var oldSize = HEAPU8.length;
+      // With CAN_ADDRESS_2GB or MEMORY64, pointers are already unsigned.
+      requestedSize >>>= 0;
+      abortOnCannotGrowMemory(requestedSize);
+    };
 
   var printCharBuffers = [null,[],[]];
   
@@ -1316,18 +1324,24 @@ function dbg(...args) {
       ret = onDone(ret);
       return ret;
     };
+
 function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var wasmImports = {
   /** @export */
-  emscripten_memcpy_js: _emscripten_memcpy_js,
+  emscripten_resize_heap: _emscripten_resize_heap,
   /** @export */
   fd_write: _fd_write
 };
 var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _find_prime_factors = Module['_find_prime_factors'] = createExportWrapper('find_prime_factors');
+var _main = createExportWrapper('main');
+var _malloc = Module['_malloc'] = createExportWrapper('malloc');
+var _print_factors = Module['_print_factors'] = createExportWrapper('print_factors');
+var _free_factors = Module['_free_factors'] = createExportWrapper('free_factors');
+var _free = Module['_free'] = createExportWrapper('free');
 var _fflush = createExportWrapper('fflush');
 var _emscripten_stack_init = () => (_emscripten_stack_init = wasmExports['emscripten_stack_init'])();
 var _emscripten_stack_get_free = () => (_emscripten_stack_get_free = wasmExports['emscripten_stack_get_free'])();
@@ -1337,13 +1351,18 @@ var stackSave = createExportWrapper('stackSave');
 var stackRestore = createExportWrapper('stackRestore');
 var stackAlloc = createExportWrapper('stackAlloc');
 var _emscripten_stack_get_current = () => (_emscripten_stack_get_current = wasmExports['emscripten_stack_get_current'])();
+var dynCall_ii = Module['dynCall_ii'] = createExportWrapper('dynCall_ii');
+var dynCall_iiii = Module['dynCall_iiii'] = createExportWrapper('dynCall_iiii');
 var dynCall_jiji = Module['dynCall_jiji'] = createExportWrapper('dynCall_jiji');
+var dynCall_iidiiii = Module['dynCall_iidiiii'] = createExportWrapper('dynCall_iidiiii');
+var dynCall_vii = Module['dynCall_vii'] = createExportWrapper('dynCall_vii');
 
 
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===
 
 Module['ccall'] = ccall;
+Module['getValue'] = getValue;
 var missingLibrarySymbols = [
   'writeI53ToI64',
   'writeI53ToI64Clamped',
@@ -1355,10 +1374,9 @@ var missingLibrarySymbols = [
   'convertI32PairToI53',
   'convertI32PairToI53Checked',
   'convertU32PairToI53',
+  'bigintToI53Checked',
   'zeroMemory',
   'exitJS',
-  'getHeapMax',
-  'abortOnCannotGrowMemory',
   'growMemory',
   'isLeapYear',
   'ydayFromDate',
@@ -1552,7 +1570,11 @@ var unexportedSymbols = [
   'setTempRet0',
   'writeStackCookie',
   'checkStackCookie',
+  'MAX_INT53',
+  'MIN_INT53',
   'ptrToString',
+  'getHeapMax',
+  'abortOnCannotGrowMemory',
   'ENV',
   'MONTH_DAYS_REGULAR',
   'MONTH_DAYS_LEAP',
@@ -1574,7 +1596,6 @@ var unexportedSymbols = [
   'freeTableIndexes',
   'functionsInTableMap',
   'setValue',
-  'getValue',
   'PATH',
   'PATH_FS',
   'UTF8Decoder',
