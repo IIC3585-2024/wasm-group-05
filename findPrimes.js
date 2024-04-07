@@ -1,23 +1,20 @@
-export function find_prime_factors(n) {
-  var i = 2;
-  while (i * i <= n) {
-    if (n % i) {
-      i++;
-    } else {
-      n /= i;
-      console.log(i);
-    }
-  }
-  if (n > 1) {
-    console.log(n);
-  }
+import { find_prime_factors, find_prime_factors_wheel, find_prime_factors_trivial_extended } from "./js/algorithms.js";
+
+function algorithm_time(func, func_name) {
+  let start = Date.now();
+  func();
+  let end = Date.now();
+  console.log(`Execution time for ${func_name}: ${end - start} ms`);
 }
 
 export function run() {
   const method = document.querySelector("#method").value;
   const number = document.querySelector("#number").value;
   if (method === "js") {
-    find_prime_factors(number);
+    
+    algorithm_time(() => find_prime_factors(number), "find_prime_factors");
+    algorithm_time(() => find_prime_factors_wheel(number), "find_prime_factors_wheel");
+    algorithm_time(() => find_prime_factors_trivial_extended(number), "find_prime_factors_trivial_extended");
   } else {
     var result = Module.ccall(
       "find_prime_factors",
