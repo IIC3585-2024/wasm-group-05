@@ -1337,7 +1337,6 @@ var wasmImports = {
 var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _find_prime_factors = Module['_find_prime_factors'] = createExportWrapper('find_prime_factors');
-var _main = createExportWrapper('main');
 var _malloc = Module['_malloc'] = createExportWrapper('malloc');
 var _print_factors = Module['_print_factors'] = createExportWrapper('print_factors');
 var _free_factors = Module['_free_factors'] = createExportWrapper('free_factors');

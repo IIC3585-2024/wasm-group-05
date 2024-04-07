@@ -7,6 +7,19 @@ function algorithm_time(func, func_name) {
   console.log(`Execution time for ${func_name}: ${end - start} ms`);
 }
 
+function wasm_get_factors(pointer) {
+  let array = [];
+  let i = 0;
+  while (pointer !== 0) {
+    let factor = Number(Module.getValue(pointer, "i64"));
+    let next = Module.getValue(pointer + 8, "i32");
+    array.push(factor);
+    pointer = next;
+    i++;
+  }
+  console.log(array);
+}
+
 export function run() {
   const method = document.querySelector("#method").value;
   const number = document.querySelector("#number").value;
@@ -16,12 +29,15 @@ export function run() {
     algorithm_time(() => find_prime_factors_wheel(number), "find_prime_factors_wheel");
     algorithm_time(() => find_prime_factors_trivial_extended(number), "find_prime_factors_trivial_extended");
   } else {
-    var result = Module.ccall(
+    let result = Module.ccall(
       "find_prime_factors",
       "number",
-      ["number"],
+      ["string"],
       [number]
     );
-    // the function is void still
+
+    algorithm_time(() => wasm_get_factors(result), "find_prime_factors");
+    //Module.ccall("print_factors", "number", ["number"], [result]);
+    Module.ccall("free_factors", "number", ["number"], [result]);
   }
 }
