@@ -1,9 +1,13 @@
-import { find_prime_factors, find_prime_factors_wheel, find_prime_factors_trivial_extended } from "./js/algorithms.js";
+import {
+  find_prime_factors,
+  find_prime_factors_wheel,
+  find_prime_factors_trivial_extended,
+} from "./js/algorithms.js";
 
 function algorithm_time(func, func_name) {
-  let start = Date.now();
+  let start = performance.now();
   func();
-  let end = Date.now();
+  let end = performance.now();
   console.log(`Execution time for ${func_name}: ${end - start} ms`);
 }
 
@@ -36,8 +40,26 @@ export function run() {
       [number]
     );
 
+    let result_wheel = Module.ccall(
+      "find_prime_factors_wheel",
+      "number",
+      ["string"],
+      [number]
+    );
+
+    let result_trivial = Module.ccall(
+      "find_prime_factors_trivial_extended",
+      "number",
+      ["string"],
+      [number]
+    );
+
     algorithm_time(() => wasm_get_factors(result), "find_prime_factors");
-    //Module.ccall("print_factors", "number", ["number"], [result]);
+    algorithm_time(() => wasm_get_factors(result_wheel), "find_prime_factors_wheel");
+    algorithm_time(() => wasm_get_factors(result_trivial), "find_prime_factors_trivial_extended");
+
     Module.ccall("free_factors", "number", ["number"], [result]);
+    Module.ccall("free_factors", "number", ["number"], [result_wheel]);
+    Module.ccall("free_factors", "number", ["number"], [result_trivial]);
   }
 }
