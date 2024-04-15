@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "factors.h"
 #include <emscripten.h>
+#include <sanitizer/lsan_interface.h>
 
 struct factors* new_factor(long long int factor) {
   struct factors *element = (struct factors *)malloc(sizeof(struct factors));
@@ -43,7 +44,6 @@ void free_factors(struct factors *head) {
   struct factors *next = NULL;
   while (current != NULL) {
     next = current -> next;
-    // printf("freeing %lld\n", current -> factor);
     free(current);
     current = next;
   }

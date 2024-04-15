@@ -6,9 +6,14 @@ import {
 
 function algorithm_time(func, func_name) {
   let start = performance.now();
-  func();
+  let iterations = 10000;
+  let factorization;
+  for (let i = 0; i < iterations; i++) {
+    factorization = func();
+  }
   let end = performance.now();
-  console.log(`Execution time for ${func_name}: ${end - start} ms`);
+
+  return [func_name, factorization, (end - start)/iterations];
 }
 
 function wasm_get_factors(pointer) {
@@ -21,17 +26,17 @@ function wasm_get_factors(pointer) {
     pointer = next;
     i++;
   }
-  console.log(array);
+  return array;
 }
 
 export function run() {
   const method = document.querySelector("#method").value;
   const number = document.querySelector("#number").value;
+  let primeDom = [];
   if (method === "js") {
-    
-    algorithm_time(() => find_prime_factors(number), "find_prime_factors");
-    algorithm_time(() => find_prime_factors_wheel(number), "find_prime_factors_wheel");
-    algorithm_time(() => find_prime_factors_trivial_extended(number), "find_prime_factors_trivial_extended");
+    primeDom.push(createDomElement(algorithm_time(() => find_prime_factors(number), "find_prime_factors (JS)")));
+    primeDom.push(createDomElement(algorithm_time(() => find_prime_factors_wheel(number), "find_prime_factors_wheel (JS)")));
+    primeDom.push(createDomElement(algorithm_time(() => find_prime_factors_trivial_extended(number), "find_prime_factors_trivial_extended (JS)")));
   } else {
     let result = Module.ccall(
       "find_prime_factors",
@@ -54,12 +59,34 @@ export function run() {
       [number]
     );
 
-    algorithm_time(() => wasm_get_factors(result), "find_prime_factors");
-    algorithm_time(() => wasm_get_factors(result_wheel), "find_prime_factors_wheel");
-    algorithm_time(() => wasm_get_factors(result_trivial), "find_prime_factors_trivial_extended");
+    primeDom.push(createDomElement(algorithm_time(() => wasm_get_factors(result), "find_prime_factors (C)")));
+    primeDom.push(createDomElement(algorithm_time(() => wasm_get_factors(result_wheel), "find_prime_factors_wheel (C)")));
+    primeDom.push(createDomElement(algorithm_time(() => wasm_get_factors(result_trivial), "find_prime_factors_trivial_extended (C)")));
 
     Module.ccall("free_factors", "number", ["number"], [result]);
     Module.ccall("free_factors", "number", ["number"], [result_wheel]);
     Module.ccall("free_factors", "number", ["number"], [result_trivial]);
   }
+
+  for (let i = 0; i < primeDom.length; i++) {
+    setInnerHTML("#results", primeDom[i]);
+  }
 }
+
+function createDomElement(textArray) {
+  const element = document.createElement("tr");
+  textArray.forEach(data => {
+    const childElement = document.createElement("td");
+    childElement.textContent = data;
+    element.appendChild(childElement);
+  });
+
+  return element;
+}
+
+const getElement = (selector) => document.querySelector(selector);
+
+const setInnerHTML = (selector, childElement) => {
+  const element = getElement(selector);
+  if (element) element.appendChild(childElement);
+};

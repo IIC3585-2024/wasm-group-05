@@ -7,4 +7,5 @@ emcc module/find_prime_numbers.c -O3 \
      -s EXPORTED_RUNTIME_METHODS=ccall,getValue  \
      -s NO_EXIT_RUNTIME=1 \
      -s WASM_BIGINT \
+     -fsanitize=leak \
      -o module/find_prime_numbers.js

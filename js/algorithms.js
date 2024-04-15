@@ -14,7 +14,7 @@ export function find_prime_factors(n) {
   if (n > 1) {
     factorization.push(n);
   }
-  console.log(factorization);
+  return factorization;
 }
 
 export function find_prime_factors_wheel(n) {
@@ -34,7 +34,7 @@ export function find_prime_factors_wheel(n) {
   if (n > 1) {
     factorization.push(n);
   }
-  console.log(factorization);
+  return factorization;
 }
 
 export function find_prime_factors_trivial_extended(n) {
@@ -64,5 +64,5 @@ export function find_prime_factors_trivial_extended(n) {
   if (n > 1) {
     factorization.push(n);
   }
-  console.log(factorization);
+  return factorization;
 }
