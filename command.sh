@@ -9,3 +9,13 @@ emcc module/find_prime_numbers.c -O3 \
      -s WASM_BIGINT \
      -fsanitize=leak \
      -o module/find_prime_numbers.js
+
+emcc module/find_prime_numbers.c -O2 \
+     module/factors.c \
+     -s WASM=1 \
+     -s EXPORTED_FUNCTIONS=_find_prime_factors_o2,_free,_malloc,_print_factors,_free_factors,_find_prime_factors_trivial_extended_o2,_find_prime_factors_wheel_o2 \
+     -s EXPORTED_RUNTIME_METHODS=ccall,getValue  \
+     -s NO_EXIT_RUNTIME=1 \
+     -s WASM_BIGINT \
+     -fsanitize=leak \
+     -o module/find_prime_numbers_o2.js

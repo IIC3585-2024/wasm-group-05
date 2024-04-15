@@ -22,7 +22,7 @@ In the case of wanting to run the program locally, the following steps must be f
 #### to rebuild C modules run
 
 ```bash
-emcc ./find_prime_numbers.c -o find_prime_numbers.js -s NO_EXIT_RUNTIME=1 -s 'EXPORTED_RUNTIME_METHODS=["ccall"]'
+./command.sh
 ```
 
 

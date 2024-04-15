@@ -93,11 +93,34 @@ export function run() {
         [number]
       );
 
+
+      let result_square_o2 = Module.ccall(
+        "find_prime_factors_o2",
+        "number",
+        ["string"],
+        [number]
+      );
+
+      let result_wheel_o2 = Module.ccall(
+        "find_prime_factors_wheel_o2",
+        "number",
+        ["string"],
+        [number]
+      );
+
+      let result_trivial_o2 = Module.ccall(
+        "find_prime_factors_trivial_extended_o2",
+        "number",
+        ["string"],
+        [number]
+      );
+
+
       primeDom.push(
         createDomElement(
           algorithm_time(
             () => wasm_get_factors(result_square),
-            "find_prime_factors_square (C)"
+            "find_prime_factors_square (C) -O3"
           )
         )
       );
@@ -105,7 +128,7 @@ export function run() {
         createDomElement(
           algorithm_time(
             () => wasm_get_factors(result_wheel),
-            "find_prime_factors_wheel (C)"
+            "find_prime_factors_wheel (C) -O3"
           )
         )
       );
@@ -113,7 +136,34 @@ export function run() {
         createDomElement(
           algorithm_time(
             () => wasm_get_factors(result_trivial),
-            "find_prime_factors_trivial_extended (C)"
+            "find_prime_factors_trivial_extended (C) -O3"
+          )
+        )
+      );
+
+      primeDom.push(
+        createDomElement(
+          algorithm_time(
+            () => wasm_get_factors(result_square_o2),
+            "find_prime_factors_square (C) -O2"
+          )
+        )
+      );
+
+      primeDom.push(
+        createDomElement(
+          algorithm_time(
+            () => wasm_get_factors(result_wheel_o2),
+            "find_prime_factors_wheel (C) -O2"
+          )
+        )
+      );
+
+      primeDom.push(
+        createDomElement(
+          algorithm_time(
+            () => wasm_get_factors(result_trivial_o2),
+            "find_prime_factors_trivial (C) -O2"
           )
         )
       );
@@ -121,6 +171,10 @@ export function run() {
       Module.ccall("free_factors", "number", ["number"], [result_square]);
       Module.ccall("free_factors", "number", ["number"], [result_wheel]);
       Module.ccall("free_factors", "number", ["number"], [result_trivial]);
+
+      Module.ccall("free_factors", "number", ["number"], [result_square_o2]);
+      Module.ccall("free_factors", "number", ["number"], [result_wheel_o2]);
+      Module.ccall("free_factors", "number", ["number"], [result_trivial_o2]);
     }
 
     const resultsTable = getElement("#results");
