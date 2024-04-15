@@ -11,8 +11,6 @@ In the case of wanting to run the program locally, the following steps must be f
 3. Install the dependencies with `bun install`
 4. Run the program with `bun run dev`
 
-### Online
-
 ### Local Development
 #### Dependencies
 
